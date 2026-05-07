@@ -1,0 +1,412 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0" />
+  <title>Mi Álbum Mundial 2026</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg: #0a0a0f; --surface: #13131a; --surface2: #1c1c28;
+      --border: #2a2a3a; --accent: #c8f000; --accent2: #00d4ff;
+      --red: #ff4444; --text: #f0f0f0; --muted: #6b6b80;
+      --tengo: #c8f000; --falta: #ff4444; --repetida: #00d4ff;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { background: var(--bg); color: var(--text); font-family: 'DM Sans', sans-serif; min-height: 100vh; overflow-x: hidden; }
+    body::before { content:''; position:fixed; inset:0; background-image: radial-gradient(circle at 20% 20%, rgba(200,240,0,0.04) 0%, transparent 50%), radial-gradient(circle at 80% 80%, rgba(0,212,255,0.04) 0%, transparent 50%); pointer-events:none; z-index:0; }
+
+    /* ── HEADER ── */
+    .header { position:sticky; top:0; z-index:100; background:rgba(10,10,15,0.95); backdrop-filter:blur(12px); border-bottom:1px solid var(--border); padding:0 16px; }
+    .header-inner { max-width:600px; margin:0 auto; display:flex; align-items:center; justify-content:space-between; height:56px; }
+    .logo { font-family:'Bebas Neue',sans-serif; font-size:22px; letter-spacing:2px; color:var(--accent); }
+    .logo span { color:var(--text); }
+    .progress-pill { background:var(--surface2); border:1px solid var(--border); border-radius:20px; padding:4px 12px; font-size:12px; font-weight:600; color:var(--accent); }
+
+    /* ── NAV ── */
+    .nav { background:var(--surface); border-bottom:1px solid var(--border); position:sticky; top:56px; z-index:99; }
+    .nav-inner { max-width:600px; margin:0 auto; display:flex; }
+    .nav-btn { flex:1; background:none; border:none; color:var(--muted); font-family:'DM Sans',sans-serif; font-size:10px; font-weight:600; letter-spacing:0.5px; text-transform:uppercase; padding:10px 2px; cursor:pointer; transition:color 0.2s; border-bottom:2px solid transparent; }
+    .nav-btn.active { color:var(--accent); border-bottom-color:var(--accent); }
+    .nav-btn .count { display:inline-block; background:var(--surface2); border-radius:10px; padding:1px 5px; font-size:9px; margin-left:3px; }
+    .nav-btn.active .count { background:rgba(200,240,0,0.15); color:var(--accent); }
+
+    /* ── MAIN ── */
+    .main { max-width:600px; margin:0 auto; padding:16px; position:relative; z-index:1; }
+    .view { display:none; }
+    .view.active { display:block; }
+
+    /* ── STATS ── */
+    .stats-bar { display:grid; grid-template-columns:1fr 1fr 1fr; gap:8px; margin-bottom:20px; }
+    .stat-card { background:var(--surface); border:1px solid var(--border); border-radius:12px; padding:12px; text-align:center; }
+    .stat-number { font-family:'Bebas Neue',sans-serif; font-size:28px; line-height:1; margin-bottom:2px; }
+    .stat-label { font-size:10px; color:var(--muted); text-transform:uppercase; letter-spacing:0.5px; font-weight:600; }
+    .stat-card.tengo .stat-number { color:var(--tengo); }
+    .stat-card.falta .stat-number { color:var(--falta); }
+    .stat-card.repetida .stat-number { color:var(--repetida); }
+
+    /* ── PROGRESS ── */
+    .progress-bar-wrap { background:var(--surface); border:1px solid var(--border); border-radius:12px; padding:14px 16px; margin-bottom:20px; }
+    .progress-bar-label { display:flex; justify-content:space-between; font-size:12px; color:var(--muted); margin-bottom:8px; }
+    .progress-bar-label strong { color:var(--text); }
+    .progress-bar-bg { background:var(--surface2); border-radius:6px; height:8px; overflow:hidden; }
+    .progress-bar-fill { height:100%; background:linear-gradient(90deg, var(--accent), #a0c800); border-radius:6px; transition:width 0.5s ease; }
+
+    /* ── SEARCH ── */
+    .search-wrap { position:relative; margin-bottom:16px; }
+    .search-input { width:100%; background:var(--surface); border:1px solid var(--border); border-radius:12px; color:var(--text); font-family:'DM Sans',sans-serif; font-size:16px; padding:12px 16px 12px 44px; outline:none; transition:border-color 0.2s; }
+    .search-input:focus { border-color:var(--accent); }
+    .search-input::placeholder { color:var(--muted); }
+    .search-icon { position:absolute; left:14px; top:50%; transform:translateY(-50%); color:var(--muted); font-size:18px; }
+
+    /* ── CHIPS ── */
+    .filter-chips { display:flex; gap:8px; margin-bottom:16px; flex-wrap:wrap; }
+    .chip { background:var(--surface); border:1px solid var(--border); border-radius:20px; color:var(--muted); font-family:'DM Sans',sans-serif; font-size:12px; font-weight:600; padding:6px 14px; cursor:pointer; transition:all 0.2s; white-space:nowrap; }
+    .chip.active-chip { background:var(--accent); border-color:var(--accent); color:#000; }
+
+    /* ── STICKER LIST ── */
+    .sticker-list { display:flex; flex-direction:column; gap:6px; }
+    .sticker-item { background:var(--surface); border:1px solid var(--border); border-radius:12px; padding:12px 14px; display:flex; align-items:center; gap:12px; }
+    .sticker-item.tengo { border-left:3px solid var(--tengo); }
+    .sticker-item.falta { border-left:3px solid var(--falta); }
+    .sticker-item.repetida { border-left:3px solid var(--repetida); }
+    .sticker-code { font-family:'Bebas Neue',sans-serif; font-size:16px; color:var(--muted); min-width:52px; letter-spacing:1px; }
+    .sticker-info { flex:1; min-width:0; }
+    .sticker-name { font-size:14px; font-weight:500; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+    .sticker-team { font-size:11px; color:var(--muted); margin-top:1px; }
+    .sticker-badge { font-size:10px; font-weight:700; letter-spacing:0.5px; text-transform:uppercase; padding:3px 8px; border-radius:6px; white-space:nowrap; }
+    .badge-tengo { background:rgba(200,240,0,0.12); color:var(--tengo); }
+    .badge-falta { background:rgba(255,68,68,0.12); color:var(--falta); }
+    .badge-repetida { background:rgba(0,212,255,0.12); color:var(--repetida); }
+    .edited-badge { font-size:10px; margin-left:4px; }
+
+    /* ── PAÍSES ── */
+    .team-card { background:var(--surface); border:1px solid var(--border); border-radius:12px; padding:12px 14px; display:flex; align-items:center; gap:12px; cursor:pointer; transition:border-color 0.2s; margin-bottom:6px; }
+    .team-card:hover { border-color:var(--accent); }
+    .team-flag { font-size:24px; min-width:32px; text-align:center; }
+    .team-info { flex:1; min-width:0; }
+    .team-name { font-size:14px; font-weight:600; margin-bottom:4px; }
+    .team-progress-bar { background:var(--surface2); border-radius:4px; height:4px; overflow:hidden; }
+    .team-progress-fill { height:100%; border-radius:4px; transition:width 0.4s; }
+    .team-count { font-family:'Bebas Neue',sans-serif; font-size:18px; letter-spacing:1px; white-space:nowrap; }
+
+    /* ── VISTA EQUIPO ── */
+    .team-header { display:flex; align-items:center; gap:12px; margin-bottom:16px; }
+    .back-btn { background:none; border:1px solid var(--border); border-radius:8px; color:var(--muted); font-family:'DM Sans',sans-serif; font-size:13px; font-weight:600; padding:8px 14px; cursor:pointer; transition:all 0.2s; }
+    .back-btn:hover { color:var(--text); border-color:var(--text); }
+    .team-view-title { font-family:'Bebas Neue',sans-serif; font-size:24px; letter-spacing:2px; flex:1; }
+    .team-view-stats { font-size:13px; color:var(--muted); margin-bottom:4px; }
+
+    /* ── LOCK / PIN ── */
+    .lock-screen { background:var(--surface); border:1px solid var(--border); border-radius:16px; padding:32px 24px; text-align:center; margin-top:24px; }
+    .lock-icon { font-size:48px; margin-bottom:16px; }
+    .lock-title { font-family:'Bebas Neue',sans-serif; font-size:28px; letter-spacing:2px; margin-bottom:8px; }
+    .lock-subtitle { font-size:14px; color:var(--muted); margin-bottom:24px; }
+    .pin-dots { display:flex; justify-content:center; gap:10px; margin-bottom:20px; }
+    .pin-dot { width:12px; height:12px; border-radius:50%; border:2px solid var(--border); transition:all 0.2s; }
+    .pin-dot.filled { background:var(--accent); border-color:var(--accent); }
+    .pin-input { width:100%; background:var(--surface2); border:1px solid var(--border); border-radius:12px; color:var(--text); font-family:'DM Sans',sans-serif; font-size:18px; text-align:center; letter-spacing:8px; padding:14px; outline:none; margin-bottom:12px; transition:border-color 0.2s; }
+    .pin-input:focus { border-color:var(--accent); }
+    .pin-error { color:var(--red); font-size:13px; margin-bottom:12px; display:none; }
+
+    /* ── MARCAR ── */
+    .marcar-panel { animation:fadeIn 0.3s ease; }
+    .section-title { font-family:'Bebas Neue',sans-serif; font-size:22px; letter-spacing:2px; color:var(--muted); margin-bottom:12px; }
+    .marcar-search-wrap { position:relative; margin-bottom:12px; }
+    .marcar-search { width:100%; background:var(--surface); border:1px solid var(--border); border-radius:12px; color:var(--text); font-family:'DM Sans',sans-serif; font-size:16px; padding:14px 16px 14px 44px; outline:none; transition:border-color 0.2s; }
+    .marcar-search:focus { border-color:var(--accent); }
+    .marcar-search::placeholder { color:var(--muted); }
+    .search-results-drop { position:absolute; top:calc(100% + 4px); left:0; right:0; background:var(--surface2); border:1px solid var(--border); border-radius:12px; max-height:240px; overflow-y:auto; z-index:200; display:none; }
+    .search-results-drop.open { display:block; }
+    .drop-item { padding:12px 16px; cursor:pointer; display:flex; align-items:center; gap:10px; transition:background 0.15s; border-bottom:1px solid var(--border); }
+    .drop-item:last-child { border-bottom:none; }
+    .drop-item:hover { background:var(--surface); }
+    .drop-code { font-family:'Bebas Neue',sans-serif; font-size:15px; color:var(--accent); min-width:52px; }
+    .drop-name { font-size:13px; }
+    .drop-team { font-size:11px; color:var(--muted); }
+
+    /* ── SELECTED CARD ── */
+    .selected-card { background:var(--surface); border:1px solid var(--border); border-radius:14px; padding:20px; margin-bottom:16px; display:none; }
+    .selected-card.show { display:block; animation:fadeIn 0.2s ease; }
+    .selected-header { display:flex; align-items:center; gap:14px; margin-bottom:16px; }
+    .selected-code { font-family:'Bebas Neue',sans-serif; font-size:32px; color:var(--accent); letter-spacing:2px; line-height:1; }
+    .selected-details .name { font-size:16px; font-weight:600; }
+    .selected-details .team { font-size:13px; color:var(--muted); }
+    .action-buttons { display:grid; grid-template-columns:1fr 1fr 1fr 1fr; gap:6px; }
+    .action-btn { border:none; border-radius:10px; padding:12px 6px; font-family:'DM Sans',sans-serif; font-size:11px; font-weight:700; letter-spacing:0.5px; text-transform:uppercase; cursor:pointer; transition:all 0.2s; display:flex; flex-direction:column; align-items:center; gap:4px; }
+    .action-btn .btn-icon { font-size:20px; }
+    .btn-tengo    { background:rgba(200,240,0,0.12); color:var(--tengo);    border:1px solid rgba(200,240,0,0.3); }
+    .btn-tengo:hover, .btn-tengo.selected    { background:var(--tengo);    color:#000; }
+    .btn-falta    { background:rgba(255,68,68,0.12);  color:var(--falta);    border:1px solid rgba(255,68,68,0.3); }
+    .btn-falta:hover, .btn-falta.selected    { background:var(--falta);    color:#fff; }
+    .btn-repetida { background:rgba(0,212,255,0.12);  color:var(--repetida); border:1px solid rgba(0,212,255,0.3); }
+    .btn-repetida:hover, .btn-repetida.selected { background:var(--repetida); color:#000; }
+    .btn-quitar   { background:rgba(107,107,128,0.12);color:var(--muted);   border:1px solid rgba(107,107,128,0.3); }
+    .btn-quitar:hover, .btn-quitar.selected   { background:var(--muted);   color:#fff; }
+
+    /* ── EDIT NAME ── */
+    .edit-name-wrap { margin-top:12px; padding-top:12px; border-top:1px solid var(--border); }
+    .edit-name-label { font-size:11px; color:var(--muted); font-weight:600; text-transform:uppercase; letter-spacing:0.5px; margin-bottom:6px; }
+    .edit-name-row { display:flex; gap:8px; }
+    .edit-name-input { flex:1; background:var(--surface2); border:1px solid var(--border); border-radius:10px; color:var(--text); font-family:'DM Sans',sans-serif; font-size:14px; padding:10px 12px; outline:none; transition:border-color 0.2s; }
+    .edit-name-input:focus { border-color:var(--accent); }
+    .edit-name-btn { background:var(--surface2); border:1px solid var(--border); border-radius:10px; color:var(--muted); font-family:'DM Sans',sans-serif; font-size:13px; font-weight:600; padding:10px 14px; cursor:pointer; transition:all 0.2s; white-space:nowrap; }
+    .edit-name-btn:hover { border-color:var(--accent); color:var(--accent); }
+
+    /* ── SAVE / LOGOUT ── */
+    .save-btn { width:100%; background:var(--accent); color:#000; border:none; border-radius:12px; padding:14px; font-family:'DM Sans',sans-serif; font-size:15px; font-weight:700; cursor:pointer; transition:all 0.2s; margin-top:12px; display:none; }
+    .save-btn.show { display:block; }
+    .save-btn:hover { background:#b8df00; }
+    .save-btn:active { transform:scale(0.98); }
+    .logout-btn { background:none; border:1px solid var(--border); border-radius:8px; color:var(--muted); font-family:'DM Sans',sans-serif; font-size:12px; padding:6px 12px; cursor:pointer; transition:all 0.2s; }
+    .logout-btn:hover { color:var(--text); border-color:var(--text); }
+
+    /* ── RECENT CHANGES ── */
+    .recent-box { background:var(--surface); border:1px solid var(--border); border-radius:12px; padding:16px; margin-top:8px; }
+    .recent-label { font-size:12px; color:var(--muted); margin-bottom:8px; font-weight:600; text-transform:uppercase; letter-spacing:0.5px; }
+    .recent-item { padding:4px 0; border-bottom:1px solid var(--border); color:var(--text); font-size:13px; }
+    .recent-item:last-child { border-bottom:none; }
+
+    /* ── CONFIRM DIALOG ── */
+    .dialog-overlay { position:fixed; inset:0; background:rgba(0,0,0,0.7); z-index:500; display:none; align-items:center; justify-content:center; padding:24px; }
+    .dialog-overlay.show { display:flex; }
+    .dialog-box { background:var(--surface2); border:1px solid var(--border); border-radius:16px; padding:24px; max-width:320px; width:100%; animation:fadeIn 0.2s ease; }
+    .dialog-icon { font-size:40px; text-align:center; margin-bottom:12px; }
+    .dialog-msg { font-size:15px; text-align:center; margin-bottom:20px; line-height:1.5; }
+    .dialog-btns { display:grid; grid-template-columns:1fr 1fr; gap:8px; }
+    .dialog-btn { border:none; border-radius:10px; padding:12px; font-family:'DM Sans',sans-serif; font-size:13px; font-weight:700; cursor:pointer; transition:all 0.2s; }
+    .dialog-btn.primary { background:var(--repetida); color:#000; }
+    .dialog-btn.secondary { background:var(--surface); border:1px solid var(--border); color:var(--muted); }
+
+    /* ── BTN PRIMARY ── */
+    .btn-primary { background:var(--accent); color:#000; border:none; border-radius:10px; padding:12px 24px; font-family:'DM Sans',sans-serif; font-size:14px; font-weight:700; cursor:pointer; transition:background 0.2s; margin-top:8px; }
+    .btn-primary:hover { background:#b8df00; }
+
+    /* ── EMPTY ── */
+    .empty-state { text-align:center; padding:48px 24px; color:var(--muted); }
+    .empty-icon { font-size:48px; margin-bottom:12px; }
+    .empty-text { font-size:14px; }
+
+    /* ── LOADING ── */
+    .loading { text-align:center; padding:40px; color:var(--muted); font-size:14px; }
+    .spinner { width:32px; height:32px; border:3px solid var(--border); border-top-color:var(--accent); border-radius:50%; animation:spin 0.8s linear infinite; margin:0 auto 12px; }
+
+    /* ── TOAST ── */
+    .toast { position:fixed; bottom:24px; left:50%; transform:translateX(-50%) translateY(80px); background:var(--surface2); border:1px solid var(--border); border-radius:12px; padding:12px 20px; font-size:14px; font-weight:500; z-index:999; transition:transform 0.3s ease; white-space:nowrap; }
+    .toast.show { transform:translateX(-50%) translateY(0); }
+    .toast.success { border-color:var(--tengo); color:var(--tengo); }
+    .toast.error   { border-color:var(--red);   color:var(--red); }
+
+    @keyframes fadeIn { from { opacity:0; transform:translateY(8px); } to { opacity:1; transform:translateY(0); } }
+    @keyframes spin   { to { transform:rotate(360deg); } }
+    ::-webkit-scrollbar { width:4px; }
+    ::-webkit-scrollbar-thumb { background:var(--border); border-radius:4px; }
+  </style>
+</head>
+<body>
+
+<!-- ── HEADER ── -->
+<header class="header">
+  <div class="header-inner">
+    <div class="logo">⚽ ÁLBUM <span>MUNDIAL 26</span></div>
+    <div class="progress-pill" id="headerProgress">— / 980</div>
+  </div>
+</header>
+
+<!-- ── NAV ── -->
+<nav class="nav">
+  <div class="nav-inner">
+    <button class="nav-btn active" data-view="album"     onclick="App.switchView('album')">📗 Mi Álbum</button>
+    <button class="nav-btn"        data-view="faltantes" onclick="App.switchView('faltantes')">❌ Faltan <span class="count" id="countFalta">0</span></button>
+    <button class="nav-btn"        data-view="repetidas" onclick="App.switchView('repetidas')">🔁 Repetidas <span class="count" id="countRepetida">0</span></button>
+    <button class="nav-btn"        data-view="paises"    onclick="App.switchView('paises')">🌍 Países</button>
+    <button class="nav-btn"        data-view="marcar"    onclick="App.switchView('marcar')">✏️ Marcar</button>
+  </div>
+</nav>
+
+<main class="main">
+
+  <!-- ── MI ÁLBUM ── -->
+  <div class="view active" id="view-album">
+    <div class="stats-bar">
+      <div class="stat-card tengo">
+        <div class="stat-number" id="statTengo">0</div>
+        <div class="stat-label">Tengo</div>
+      </div>
+      <div class="stat-card falta">
+        <div class="stat-number" id="statFalta">0</div>
+        <div class="stat-label">Faltan</div>
+      </div>
+      <div class="stat-card repetida">
+        <div class="stat-number" id="statRepetida">0</div>
+        <div class="stat-label">Repetidas</div>
+      </div>
+    </div>
+    <div class="progress-bar-wrap">
+      <div class="progress-bar-label">
+        <span>Progreso del álbum</span>
+        <strong id="progressText">0%</strong>
+      </div>
+      <div class="progress-bar-bg">
+        <div class="progress-bar-fill" id="progressFill" style="width:0%"></div>
+      </div>
+    </div>
+    <div class="search-wrap">
+      <span class="search-icon">🔍</span>
+      <input class="search-input" type="text" placeholder="Buscar por código o jugador..." id="albumSearch" oninput="App.filterAlbum()" />
+    </div>
+    <div class="filter-chips" id="albumChips">
+      <button class="chip active-chip" onclick="App.setAlbumFilter('todos', this)">Todos</button>
+      <button class="chip" onclick="App.setAlbumFilter('tengo', this)">✅ Tengo</button>
+      <button class="chip" onclick="App.setAlbumFilter('falta', this)">❌ Falta</button>
+      <button class="chip" onclick="App.setAlbumFilter('repetida', this)">🔁 Repetida</button>
+    </div>
+    <div id="albumList" class="sticker-list">
+      <div class="loading"><div class="spinner"></div>Cargando estampas...</div>
+    </div>
+  </div>
+
+  <!-- ── FALTANTES ── -->
+  <div class="view" id="view-faltantes">
+    <div class="search-wrap">
+      <span class="search-icon">🔍</span>
+      <input class="search-input" type="text" placeholder="Buscar faltante..." id="faltaSearch" oninput="App.filterFalta()" />
+    </div>
+    <div id="faltaList" class="sticker-list">
+      <div class="loading"><div class="spinner"></div>Cargando...</div>
+    </div>
+  </div>
+
+  <!-- ── REPETIDAS ── -->
+  <div class="view" id="view-repetidas">
+    <div class="search-wrap">
+      <span class="search-icon">🔍</span>
+      <input class="search-input" type="text" placeholder="Buscar repetida..." id="repetidaSearch" oninput="App.filterRepetida()" />
+    </div>
+    <div id="repetidaList" class="sticker-list">
+      <div class="loading"><div class="spinner"></div>Cargando...</div>
+    </div>
+  </div>
+
+  <!-- ── PAÍSES ── -->
+  <div class="view" id="view-paises">
+    <!-- Lista de equipos -->
+    <div id="view-paises">
+      <div id="paisesList" class="sticker-list">
+        <div class="loading"><div class="spinner"></div>Cargando países...</div>
+      </div>
+    </div>
+    <!-- Vista de un equipo (oculta por defecto) -->
+    <div id="view-equipo" style="display:none">
+      <div class="team-header">
+        <button class="back-btn" onclick="App.backToTeams()">← Volver</button>
+        <div class="team-view-title" id="team-title">—</div>
+      </div>
+      <div class="progress-bar-wrap" style="margin-bottom:16px">
+        <div class="progress-bar-label">
+          <span class="team-view-stats" id="teamProgress">—</span>
+        </div>
+        <div class="progress-bar-bg">
+          <div class="progress-bar-fill" id="teamProgressFill" style="width:0%"></div>
+        </div>
+      </div>
+      <div id="equipoList" class="sticker-list"></div>
+    </div>
+  </div>
+
+  <!-- ── MARCAR ── -->
+  <div class="view" id="view-marcar">
+    <!-- Lock -->
+    <div class="lock-screen" id="lockScreen">
+      <div class="lock-icon">🔒</div>
+      <div class="lock-title">Zona Familiar</div>
+      <div class="lock-subtitle">Ingresá el PIN para marcar estampas</div>
+      <div class="pin-dots">
+        <div class="pin-dot" id="dot0"></div>
+        <div class="pin-dot" id="dot1"></div>
+        <div class="pin-dot" id="dot2"></div>
+        <div class="pin-dot" id="dot3"></div>
+      </div>
+      <input class="pin-input" type="password" inputmode="text" maxlength="20" id="pinInput" placeholder="• • • •" oninput="App.checkPin()" />
+      <div class="pin-error" id="pinError">PIN incorrecto, intentá de nuevo</div>
+      <button class="btn-primary" onclick="App.checkPin()">Entrar</button>
+    </div>
+
+    <!-- Panel -->
+    <div class="marcar-panel" id="marcarPanel" style="display:none">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px">
+        <div class="section-title">Marcar Estampa</div>
+        <button class="logout-btn" onclick="App.lockMarcar()">🔒 Cerrar</button>
+      </div>
+
+      <div class="marcar-search-wrap">
+        <span class="search-icon">🔍</span>
+        <input class="marcar-search" type="text" placeholder="Código (ej: ARG17) o nombre..." id="marcarSearch" oninput="App.searchMarcar()" autocomplete="off" />
+        <div class="search-results-drop" id="searchDrop"></div>
+      </div>
+
+      <div class="selected-card" id="selectedCard">
+        <div class="selected-header">
+          <div class="selected-code" id="selCode">—</div>
+          <div class="selected-details">
+            <div class="name" id="selName">—</div>
+            <div class="team" id="selTeam">—</div>
+          </div>
+        </div>
+        <div class="action-buttons">
+          <button class="action-btn btn-tengo"    onclick="App.selectAction('tengo')">
+            <span class="btn-icon">✅</span>Tengo
+          </button>
+          <button class="action-btn btn-falta"    onclick="App.selectAction('falta')">
+            <span class="btn-icon">❌</span>Falta
+          </button>
+          <button class="action-btn btn-repetida" onclick="App.selectAction('repetida')">
+            <span class="btn-icon">🔁</span>Repetida
+          </button>
+          <button class="action-btn btn-quitar"   onclick="App.selectAction('quitar')">
+            <span class="btn-icon">⬜</span>Quitar
+          </button>
+        </div>
+        <div class="edit-name-wrap">
+          <div class="edit-name-label">✏️ Corregir nombre del jugador</div>
+          <div class="edit-name-row">
+            <input class="edit-name-input" type="text" id="editNameInput" placeholder="Nombre correcto..." />
+            <button class="edit-name-btn" onclick="App.saveName()">Guardar nombre</button>
+          </div>
+        </div>
+        <button class="save-btn" id="saveBtn" onclick="App.saveSticker()">Guardar cambio</button>
+      </div>
+
+      <div class="recent-box">
+        <div class="recent-label">Últimos cambios</div>
+        <div id="recentChanges" style="color:var(--muted);font-size:13px">Sin cambios recientes</div>
+      </div>
+    </div>
+  </div>
+
+</main>
+
+<!-- ── CONFIRM DIALOG ── -->
+<div class="dialog-overlay" id="confirmDialog">
+  <div class="dialog-box">
+    <div class="dialog-icon">⚠️</div>
+    <div class="dialog-msg" id="dialogMsg"></div>
+    <div class="dialog-btns">
+      <button class="dialog-btn primary"   id="dialogRepetida">🔁 Marcar repetida</button>
+      <button class="dialog-btn secondary" id="dialogDescartar">Descartar</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<!-- ── SCRIPTS ── -->
+<!-- Orden importante: config → stickers → album → app -->
+<script src="config.js"></script>
+<script src="stickers.js"></script>
+<script src="album.js"></script>
+<script type="module" src="app.js"></script>
+
+</body>
+</html>

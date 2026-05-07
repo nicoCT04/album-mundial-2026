@@ -1,9 +1,7 @@
 // =============================================
 // APP.JS — Firebase + UI principal
+// Usa Firebase Compat SDK (no modules)
 // =============================================
-
-const { initializeApp } = await import("https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js");
-const { getFirestore, doc, getDoc, setDoc, onSnapshot } = await import("https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js");
 
 const App = (() => {
 
@@ -11,28 +9,28 @@ const App = (() => {
   let db, albumRef, namesRef;
 
   // ── Estado UI ────────────────────────────────
-  let currentView        = 'album';
-  let albumFilter        = 'todos';
-  let currentTeam        = null;
-  let selectedSticker    = null;
-  let selectedAction     = null;
-  let unlocked           = false;
-  let recentChanges      = [];
+  let currentView     = 'album';
+  let albumFilter     = 'todos';
+  let currentTeam     = null;
+  let selectedSticker = null;
+  let selectedAction  = null;
+  let unlocked        = false;
+  let recentChanges   = [];
 
   // ── Init ─────────────────────────────────────
   async function init() {
-    const app = initializeApp(CONFIG.firebase);
-    db        = getFirestore(app);
-    albumRef  = doc(db, 'album', 'estado');
-    namesRef  = doc(db, 'album', 'nombres');
+    firebase.initializeApp(CONFIG.firebase);
+    db       = firebase.firestore();
+    albumRef = db.collection('album').doc('estado');
+    namesRef = db.collection('album').doc('nombres');
 
     try {
       const [snapAlbum, snapNames] = await Promise.all([
-        getDoc(albumRef), getDoc(namesRef)
+        albumRef.get(), namesRef.get()
       ]);
 
-      const data  = snapAlbum.exists()  ? snapAlbum.data()  : _initAlbum();
-      const names = snapNames.exists()  ? snapNames.data()  : {};
+      const data  = snapAlbum.exists  ? snapAlbum.data()  : await _initAlbum();
+      const names = snapNames.exists  ? snapNames.data()  : {};
 
       Album.init(data, names);
       _updateUI();
@@ -42,18 +40,18 @@ const App = (() => {
     }
 
     // Listeners en tiempo real
-    onSnapshot(albumRef, snap => {
-      if (snap.exists()) { Album.setData(snap.data());  _updateUI(); }
+    albumRef.onSnapshot(snap => {
+      if (snap.exists) { Album.setData(snap.data()); _updateUI(); }
     });
-    onSnapshot(namesRef, snap => {
-      if (snap.exists()) { Album.setNames(snap.data()); _updateUI(); }
+    namesRef.onSnapshot(snap => {
+      if (snap.exists) { Album.setNames(snap.data()); _updateUI(); }
     });
   }
 
   async function _initAlbum() {
     const data = {};
     STICKERS.forEach(s => data[s.id] = 'falta');
-    await setDoc(albumRef, data);
+    await albumRef.set(data);
     return data;
   }
 
@@ -64,7 +62,6 @@ const App = (() => {
     document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
     document.getElementById('view-' + name)?.classList.add('active');
     document.querySelector(`[data-view="${name}"]`)?.classList.add('active');
-    // Si volvemos de un equipo, limpiar
     if (name !== 'paises') currentTeam = null;
     _renderCurrentView();
   }
@@ -73,46 +70,39 @@ const App = (() => {
     currentTeam = teamName;
     document.getElementById('team-title').textContent =
       (TEAMS.find(t => t.name === teamName)?.flag || '') + ' ' + teamName;
-    document.getElementById('view-paises').style.display  = 'none';
-    document.getElementById('view-equipo').style.display  = 'block';
+    document.getElementById('view-paises-list').style.display = 'none';
+    document.getElementById('view-equipo').style.display      = 'block';
     _renderTeamView();
   }
 
   function backToTeams() {
     currentTeam = null;
-    document.getElementById('view-paises').style.display = 'block';
-    document.getElementById('view-equipo').style.display = 'none';
+    document.getElementById('view-paises-list').style.display = 'block';
+    document.getElementById('view-equipo').style.display      = 'none';
   }
 
   // ── Render central ───────────────────────────
   function _updateUI() {
     const stats = Album.getStats();
-    document.getElementById('statTengo')?.textContent    !== undefined &&
-      (document.getElementById('statTengo').textContent    = stats.tengo);
-    document.getElementById('statFalta')?.textContent    !== undefined &&
-      (document.getElementById('statFalta').textContent    = stats.falta);
-    document.getElementById('statRepetida')?.textContent !== undefined &&
-      (document.getElementById('statRepetida').textContent = stats.repetida);
-    document.getElementById('progressText')?.textContent !== undefined &&
-      (document.getElementById('progressText').textContent = stats.pct + '%');
-    document.getElementById('progressFill') &&
-      (document.getElementById('progressFill').style.width = stats.pct + '%');
-    document.getElementById('headerProgress') &&
-      (document.getElementById('headerProgress').textContent = `${stats.tengo} / ${stats.total}`);
-    document.getElementById('countFalta') &&
-      (document.getElementById('countFalta').textContent = stats.falta);
-    document.getElementById('countRepetida') &&
-      (document.getElementById('countRepetida').textContent = stats.repetida);
-
+    const set = (id, val) => { const el = document.getElementById(id); if(el) el.textContent = val; };
+    set('statTengo',      stats.tengo);
+    set('statFalta',      stats.falta);
+    set('statRepetida',   stats.repetida);
+    set('progressText',   stats.pct + '%');
+    set('headerProgress', `${stats.tengo} / ${stats.total}`);
+    set('countFalta',     stats.falta);
+    set('countRepetida',  stats.repetida);
+    const fill = document.getElementById('progressFill');
+    if (fill) fill.style.width = stats.pct + '%';
     _renderCurrentView();
   }
 
   function _renderCurrentView() {
     switch(currentView) {
-      case 'album':    _renderAlbum();    break;
-      case 'faltantes':_renderFaltantes();break;
-      case 'repetidas':_renderRepetidas();break;
-      case 'paises':   _renderPaises();   break;
+      case 'album':     _renderAlbum();     break;
+      case 'faltantes': _renderFaltantes(); break;
+      case 'repetidas': _renderRepetidas(); break;
+      case 'paises':    _renderPaises();    break;
     }
     if (currentTeam) _renderTeamView();
   }
@@ -128,9 +118,9 @@ const App = (() => {
   }
 
   function _renderFaltantes() {
-    const q   = document.getElementById('faltaSearch')?.value || '';
+    const q    = document.getElementById('faltaSearch')?.value || '';
     const list = Album.filtrar(Album.getFaltantes(), q, null);
-    const el  = document.getElementById('faltaList');
+    const el   = document.getElementById('faltaList');
     if (!el) return;
     el.innerHTML = list.length
       ? list.map(Album.renderItem).join('')
@@ -138,9 +128,9 @@ const App = (() => {
   }
 
   function _renderRepetidas() {
-    const q   = document.getElementById('repetidaSearch')?.value || '';
+    const q    = document.getElementById('repetidaSearch')?.value || '';
     const list = Album.filtrar(Album.getRepetidas(), q, null);
-    const el  = document.getElementById('repetidaList');
+    const el   = document.getElementById('repetidaList');
     if (!el) return;
     el.innerHTML = list.length
       ? list.map(Album.renderItem).join('')
@@ -159,12 +149,10 @@ const App = (() => {
     const stats    = Album.getTeamStats(currentTeam);
     const el       = document.getElementById('equipoList');
     if (!el) return;
-
-    document.getElementById('teamProgress') &&
-      (document.getElementById('teamProgress').textContent = `${stats.tengo}/${stats.total} (${stats.pct}%)`);
-    document.getElementById('teamProgressFill') &&
-      (document.getElementById('teamProgressFill').style.width = stats.pct + '%');
-
+    const tp = document.getElementById('teamProgress');
+    const tf = document.getElementById('teamProgressFill');
+    if (tp) tp.textContent = `${stats.tengo}/${stats.total} (${stats.pct}%)`;
+    if (tf) tf.style.width = stats.pct + '%';
     el.innerHTML = stickers.map(Album.renderItem).join('');
   }
 
@@ -211,7 +199,7 @@ const App = (() => {
 
   // ── Marcar — búsqueda ────────────────────────
   function searchMarcar() {
-    const q   = document.getElementById('marcarSearch')?.value.toLowerCase().trim() || '';
+    const q    = document.getElementById('marcarSearch')?.value.toLowerCase().trim() || '';
     const drop = document.getElementById('searchDrop');
     if (!drop) return;
     if (!q) { drop.classList.remove('open'); return; }
@@ -242,13 +230,12 @@ const App = (() => {
     selectedAction  = null;
 
     document.getElementById('searchDrop')?.classList.remove('open');
-    document.getElementById('marcarSearch').value = `${s.id} — ${Album.getNombre(s)}`;
+    document.getElementById('marcarSearch').value  = `${s.id} — ${Album.getNombre(s)}`;
     document.getElementById('selCode').textContent = s.id;
     document.getElementById('selName').textContent = Album.getNombre(s);
     document.getElementById('selTeam').textContent = `${s.flag || ''} ${s.team}`;
-    document.getElementById('editNameInput').value  = '';
+    document.getElementById('editNameInput').value = '';
 
-    // Resaltar estado actual
     const estado = Album.getEstado(s.id);
     document.querySelectorAll('.action-btn').forEach(b => b.classList.remove('selected'));
     const btnMap = { tengo: '.btn-tengo', falta: '.btn-falta', repetida: '.btn-repetida' };
@@ -270,11 +257,9 @@ const App = (() => {
   // ── Guardar estampa (con validación) ─────────
   async function saveSticker() {
     if (!selectedSticker || !selectedAction) return;
-
-    // Validación: ya la tenés?
     const validacion = Album.validarCambio(selectedSticker, selectedAction);
     if (validacion.warn) {
-      _showConfirmDialog(validacion.msg, validacion.suggestion);
+      _showConfirmDialog(validacion.msg);
       return;
     }
     await _commitSave(selectedAction);
@@ -284,7 +269,7 @@ const App = (() => {
     const s         = selectedSticker;
     const nuevoData = Album.aplicarCambio(s.id, action);
     try {
-      await setDoc(albumRef, nuevoData);
+      await albumRef.set(nuevoData);
       const labelMap = { tengo:'✅ Tengo', falta:'❌ Falta', repetida:'🔁 Repetida', quitar:'⬜ Quitada' };
       showToast(`${s.id} → ${labelMap[action]}`, 'success');
 
@@ -301,7 +286,7 @@ const App = (() => {
   }
 
   // ── Dialog de confirmación ───────────────────
-  function _showConfirmDialog(msg, suggestion) {
+  function _showConfirmDialog(msg) {
     const dialog = document.getElementById('confirmDialog');
     if (!dialog) return;
     document.getElementById('dialogMsg').innerHTML = msg;
@@ -326,7 +311,7 @@ const App = (() => {
     const nuevoNames = Album.aplicarNombre(selectedSticker.id, nuevoNombre);
     if (!nuevoNames) return;
     try {
-      await setDoc(namesRef, nuevoNames);
+      await namesRef.set(nuevoNames);
       document.getElementById('selName').textContent = nuevoNombre;
       showToast('✏️ Nombre actualizado', 'success');
     } catch(e) {
@@ -338,8 +323,8 @@ const App = (() => {
   function _clearSelected() {
     selectedSticker = null;
     selectedAction  = null;
-    document.getElementById('marcarSearch') &&
-      (document.getElementById('marcarSearch').value = '');
+    const ms = document.getElementById('marcarSearch');
+    if (ms) ms.value = '';
     document.getElementById('selectedCard')?.classList.remove('show');
     document.getElementById('saveBtn')?.classList.remove('show');
     document.querySelectorAll('.action-btn').forEach(b => b.classList.remove('selected'));
@@ -359,12 +344,15 @@ const App = (() => {
     setAlbumFilter, checkPin, lockMarcar,
     searchMarcar, selectSticker, selectAction,
     saveSticker, saveName, showToast,
-    filterAlbum:    () => { const el = document.getElementById('albumList');    if(el) _renderAlbum(); },
-    filterFalta:    () => { const el = document.getElementById('faltaList');    if(el) _renderFaltantes(); },
-    filterRepetida: () => { const el = document.getElementById('repetidaList');if(el) _renderRepetidas(); },
+    filterAlbum:    () => _renderAlbum(),
+    filterFalta:    () => _renderFaltantes(),
+    filterRepetida: () => _renderRepetidas(),
   };
 
 })();
+
+// Exponer globalmente
+window.App = App;
 
 // Iniciar
 App.init();
@@ -375,5 +363,3 @@ document.addEventListener('click', e => {
     document.getElementById('searchDrop')?.classList.remove('open');
   }
 });
-
-window.App = App;

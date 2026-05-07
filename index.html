@@ -507,8 +507,8 @@
 
     .action-buttons {
       display: grid;
-      grid-template-columns: 1fr 1fr 1fr;
-      gap: 8px;
+      grid-template-columns: 1fr 1fr 1fr 1fr;
+      gap: 6px;
     }
 
     .action-btn {
@@ -538,6 +538,60 @@
 
     .btn-repetida { background: rgba(0,212,255,0.12); color: var(--repetida); border: 1px solid rgba(0,212,255,0.3); }
     .btn-repetida:hover, .btn-repetida.selected { background: var(--repetida); color: #000; }
+
+    .btn-quitar { background: rgba(107,107,128,0.12); color: var(--muted); border: 1px solid rgba(107,107,128,0.3); }
+    .btn-quitar:hover, .btn-quitar.selected { background: var(--muted); color: #fff; }
+
+    .edit-name-wrap {
+      margin-top: 12px;
+      padding-top: 12px;
+      border-top: 1px solid var(--border);
+    }
+
+    .edit-name-label {
+      font-size: 11px;
+      color: var(--muted);
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      margin-bottom: 6px;
+    }
+
+    .edit-name-row {
+      display: flex;
+      gap: 8px;
+    }
+
+    .edit-name-input {
+      flex: 1;
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      color: var(--text);
+      font-family: 'DM Sans', sans-serif;
+      font-size: 14px;
+      padding: 10px 12px;
+      outline: none;
+      transition: border-color 0.2s;
+    }
+
+    .edit-name-input:focus { border-color: var(--accent); }
+
+    .edit-name-btn {
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      color: var(--muted);
+      font-family: 'DM Sans', sans-serif;
+      font-size: 13px;
+      font-weight: 600;
+      padding: 10px 14px;
+      cursor: pointer;
+      transition: all 0.2s;
+      white-space: nowrap;
+    }
+
+    .edit-name-btn:hover { border-color: var(--accent); color: var(--accent); }
 
     .save-btn {
       width: 100%;
@@ -790,7 +844,19 @@
           <button class="action-btn btn-repetida" onclick="selectAction('repetida')">
             <span class="btn-icon">🔁</span>Repetida
           </button>
+          <button class="action-btn btn-quitar" onclick="selectAction('quitar')">
+            <span class="btn-icon">⬜</span>Quitar
+          </button>
         </div>
+
+        <div class="edit-name-wrap">
+          <div class="edit-name-label">✏️ Corregir nombre del jugador</div>
+          <div class="edit-name-row">
+            <input class="edit-name-input" type="text" id="editNameInput" placeholder="Nombre correcto..." />
+            <button class="edit-name-btn" onclick="saveName()">Guardar nombre</button>
+          </div>
+        </div>
+
         <button class="save-btn" id="saveBtn" onclick="saveSticker()">Guardar cambio</button>
       </div>
 
@@ -1955,6 +2021,7 @@
 
   // ===== STATE =====
   let albumData = {}; // {stickerId: 'tengo'|'falta'|'repetida'}
+  let customNames = {}; // {stickerId: 'nombre corregido'}
   let currentSelectedSticker = null;
   let currentAction = null;
   let albumFilter = 'todos';
@@ -1963,17 +2030,18 @@
 
   // ===== FIREBASE SYNC =====
   const albumRef = doc(db, 'album', 'estado');
+  const namesRef = doc(db, 'album', 'nombres');
 
   async function initApp() {
     try {
-      const snap = await getDoc(albumRef);
-      if (snap.exists()) {
-        albumData = snap.data();
+      const [snapAlbum, snapNames] = await Promise.all([getDoc(albumRef), getDoc(namesRef)]);
+      if (snapAlbum.exists()) {
+        albumData = snapAlbum.data();
       } else {
-        // Initialize with all stickers as 'falta'
         STICKERS.forEach(s => albumData[s.id] = 'falta');
         await setDoc(albumRef, albumData);
       }
+      if (snapNames.exists()) customNames = snapNames.data();
       updateUI();
     } catch(e) {
       console.error(e);
@@ -1983,10 +2051,10 @@
 
   // Real-time listener
   onSnapshot(albumRef, (snap) => {
-    if (snap.exists()) {
-      albumData = snap.data();
-      updateUI();
-    }
+    if (snap.exists()) { albumData = snap.data(); updateUI(); }
+  });
+  onSnapshot(namesRef, (snap) => {
+    if (snap.exists()) { customNames = snap.data(); updateUI(); }
   });
 
   // ===== UI FUNCTIONS =====
@@ -2016,10 +2084,12 @@
     const badgeClass = estado === 'tengo' ? 'badge-tengo' : estado === 'repetida' ? 'badge-repetida' : 'badge-falta';
     const badgeText = estado === 'tengo' ? '✅ Tengo' : estado === 'repetida' ? '🔁 Repetida' : '❌ Falta';
     const foil = s.type === 'foil' ? ' ✨' : '';
+    const nombre = customNames[s.id] || s.name;
+    const editado = customNames[s.id] ? ' <span style="color:var(--accent);font-size:10px">✏️</span>' : '';
     return `<div class="sticker-item ${estado}">
       <div class="sticker-code">${s.id}</div>
       <div class="sticker-info">
-        <div class="sticker-name">${s.name}${foil}</div>
+        <div class="sticker-name">${nombre}${foil}${editado}</div>
         <div class="sticker-team">${s.team}</div>
       </div>
       <div class="sticker-badge ${badgeClass}">${badgeText}</div>
@@ -2153,11 +2223,13 @@
     currentAction = null;
 
     document.getElementById('searchDrop').classList.remove('open');
-    document.getElementById('marcarSearch').value = `${s.id} — ${s.name}`;
+    const nombre = customNames[s.id] || s.name;
+    document.getElementById('marcarSearch').value = `${s.id} — ${nombre}`;
 
     document.getElementById('selCode').textContent = s.id;
-    document.getElementById('selName').textContent = s.name;
+    document.getElementById('selName').textContent = nombre;
     document.getElementById('selTeam').textContent = s.team;
+    document.getElementById('editNameInput').value = customNames[s.id] || '';
 
     // Show current state
     const estado = albumData[s.id] || 'falta';
@@ -2173,7 +2245,7 @@
   window.selectAction = (action) => {
     currentAction = action;
     document.querySelectorAll('.action-btn').forEach(b => b.classList.remove('selected'));
-    const btnMap = { tengo: '.btn-tengo', falta: '.btn-falta', repetida: '.btn-repetida' };
+    const btnMap = { tengo: '.btn-tengo', falta: '.btn-falta', repetida: '.btn-repetida', quitar: '.btn-quitar' };
     document.querySelector(btnMap[action])?.classList.add('selected');
     document.getElementById('saveBtn').classList.add('show');
   };
@@ -2181,22 +2253,21 @@
   window.saveSticker = async () => {
     if (!currentSelectedSticker || !currentAction) return;
     const s = currentSelectedSticker;
-    const prevState = albumData[s.id] || 'falta';
-    albumData[s.id] = currentAction;
+    // 'quitar' resets to 'falta'
+    const nuevoEstado = currentAction === 'quitar' ? 'falta' : currentAction;
+    albumData[s.id] = nuevoEstado;
 
     try {
       await setDoc(albumRef, albumData);
-      const labelMap = { tengo: '✅ Tengo', falta: '❌ Falta', repetida: '🔁 Repetida' };
-      showToast(`${s.id} marcada como ${labelMap[currentAction]}`, 'success');
+      const labelMap = { tengo: '✅ Tengo', falta: '❌ Falta', repetida: '🔁 Repetida', quitar: '⬜ Quitada' };
+      showToast(`${s.id} → ${labelMap[currentAction]}`, 'success');
 
-      // Recent changes
-      recentChanges.unshift(`${s.id} ${s.name} → ${labelMap[currentAction]}`);
+      recentChanges.unshift(`${s.id} ${customNames[s.id] || s.name} → ${labelMap[currentAction]}`);
       if (recentChanges.length > 5) recentChanges.pop();
       document.getElementById('recentChanges').innerHTML = recentChanges.map(c =>
         `<div style="padding:4px 0;border-bottom:1px solid var(--border);color:var(--text)">${c}</div>`
       ).join('') || 'Sin cambios recientes';
 
-      // Reset
       document.getElementById('marcarSearch').value = '';
       document.getElementById('selectedCard').classList.remove('show');
       document.getElementById('saveBtn').classList.remove('show');
@@ -2204,6 +2275,22 @@
       currentAction = null;
     } catch(e) {
       showToast('Error al guardar', 'info');
+    }
+  };
+
+  window.saveName = async () => {
+    if (!currentSelectedSticker) return;
+    const s = currentSelectedSticker;
+    const nuevoNombre = document.getElementById('editNameInput').value.trim();
+    if (!nuevoNombre) return;
+
+    customNames[s.id] = nuevoNombre;
+    try {
+      await setDoc(namesRef, customNames);
+      document.getElementById('selName').textContent = nuevoNombre;
+      showToast(`✏️ Nombre actualizado`, 'success');
+    } catch(e) {
+      showToast('Error al guardar nombre', 'info');
     }
   };
 

@@ -12,7 +12,7 @@ Tracker personal para el álbum Panini FIFA World Cup 2026™ — construido par
 
 ## ✨ Funcionalidades
 
-- **📗 Mi Álbum** — visualizá todas las estampas con su estado actual, filtrá por tengo / falta / repetida y buscá por código o jugador
+- **📗 Mi Álbum** — visualizá todas las estampas con su estado actual, filtrá por tengo / falta / repetida y buscá por código o jugadorr
 - **❌ Faltantes** — lista de todas las estampas que aún no tenés
 - **🔁 Repetidas** — estampas disponibles para intercambiar
 - **✏️ Marcar** — zona protegida con PIN para actualizar el estado de cada estampa

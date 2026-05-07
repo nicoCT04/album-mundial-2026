@@ -2,9 +2,8 @@
 // APP.JS — Firebase + UI principal
 // =============================================
 
-import { initializeApp }    from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
-import { getFirestore, doc, getDoc, setDoc, onSnapshot }
-  from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+const { initializeApp } = await import("https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js");
+const { getFirestore, doc, getDoc, setDoc, onSnapshot } = await import("https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js");
 
 const App = (() => {
 
@@ -376,3 +375,5 @@ document.addEventListener('click', e => {
     document.getElementById('searchDrop')?.classList.remove('open');
   }
 });
+
+window.App = App;

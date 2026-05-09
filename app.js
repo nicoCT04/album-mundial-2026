@@ -370,6 +370,10 @@ const App = (() => {
     document.getElementById('newStickerCode').value = '';
     document.getElementById('newStickerName').value = '';
     document.getElementById('newStickerTeam').value = '';
+    // Limpiar también el buscador de marcar
+    const marcarSearch = document.getElementById('marcarSearch');
+    if (marcarSearch) marcarSearch.value = '';
+    document.getElementById('searchDrop')?.classList.remove('open');
   }
 
   async function saveNewSticker() {

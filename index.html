@@ -1298,16 +1298,29 @@
   </style>
 
 <script>
-window.App = App;
-
-App.init();
-
-document.addEventListener('click', e => {
-  if (!e.target.closest('.marcar-search-wrap')) {
-    document.getElementById('searchDrop')?.classList.remove('open');
+  (function () {
+    const saved = localStorage.getItem('estadio-theme') || 'dark';
+    document.body.setAttribute('data-theme', saved);
+    setTimeout(() => {
+      const btn = document.getElementById('themeBtn');
+      if (btn) btn.textContent = saved === 'dark' ? '☀' : '☾';
+    }, 0);
+  })();
+  function toggleTheme() {
+    const cur = document.body.getAttribute('data-theme');
+    const next = cur === 'dark' ? 'light' : 'dark';
+    document.body.setAttribute('data-theme', next);
+    localStorage.setItem('estadio-theme', next);
+    document.getElementById('themeBtn').textContent = next === 'dark' ? '☀' : '☾';
   }
-});
 </script>
+
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"></script>
+<script src="config.js"></script>
+<script src="stickers.js"></script>
+<script src="album.js"></script>
+<script src="app.js"></script>
 
 
 

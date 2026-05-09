@@ -84,13 +84,25 @@ const Album = (() => {
   function validarCambio(sticker, nuevoEstado) {
     const estadoActual = getEstado(sticker.id);
 
+    // Ya la tenés (tengo → tengo)
     if (nuevoEstado === 'tengo' && estadoActual === 'tengo') {
       return {
         warn: true,
-        msg: `¡Ya tenés <strong>${getNombre(sticker)}</strong>!`,
+        msg: `¡Ya tenés <strong>${getNombre(sticker)}</strong>! ¿Querés marcarla como repetida?`,
         suggestion: 'repetida'
       };
     }
+
+    // Ya está como repetida y la marcás como tengo — probablemente es otra repetida
+    if (nuevoEstado === 'tengo' && estadoActual === 'repetida') {
+      const cant = getCantidadRepetidas(sticker.id);
+      return {
+        warn: true,
+        msg: `<strong>${getNombre(sticker)}</strong> ya está como repetida${cant > 1 ? ` (×${cant})` : ''}. ¿Querés sumar una repetida más?`,
+        suggestion: 'repetida'
+      };
+    }
+
     return { valid: true };
   }
 

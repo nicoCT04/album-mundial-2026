@@ -452,6 +452,25 @@
 
     .edited-badge { font-size: 11px; margin-left: 4px; opacity: 0.7; }
 
+    .repetida-controls {
+      display: flex; gap: 6px;
+      position: absolute; right: 12px; top: 50%; transform: translateY(-50%);
+    }
+    .btn-add-rep, .btn-remove-rep {
+      width: 28px; height: 28px;
+      border-radius: 6px;
+      border: 1px solid var(--border);
+      background: var(--surface2);
+      color: var(--text);
+      cursor: pointer;
+      font-size: 14px;
+      display: flex; align-items: center; justify-content: center;
+      transition: all 0.15s;
+    }
+    .btn-add-rep:hover { background: var(--accent); border-color: var(--accent); color: var(--bg); }
+    .btn-remove-rep:hover { background: var(--falta); border-color: var(--falta); color: white; }
+    .sticker-item.repetida { position: relative; padding-right: 70px; }
+
     /* ───── PAÍSES ───── */
     .team-card {
       background: var(--surface);
@@ -1104,6 +1123,9 @@
   <!-- ── PAÍSES ── -->
   <div class="view" id="view-paises">
     <div id="view-paises-list">
+      <div style="padding:16px;display:flex;gap:8px;border-bottom:1px solid var(--border)">
+        <button class="btn-primary" style="flex:1;padding:10px 14px;font-size:13px" onclick="App.openAddTeam()">➕ Nuevo Equipo</button>
+      </div>
       <div id="paisesList" class="sticker-list">
         <div class="loading"><div class="spinner"></div>Cargando países</div>
       </div>
@@ -1120,6 +1142,9 @@
         <div class="progress-bar-bg">
           <div class="progress-bar-fill" id="teamProgressFill" style="width:0%"></div>
         </div>
+      </div>
+      <div style="padding:12px 16px;display:flex;gap:8px;border-bottom:1px solid var(--border)">
+        <button class="btn-primary" style="flex:1;padding:10px 14px;font-size:13px" onclick="App.openAddSticker()">➕ Nuevo Jugador</button>
       </div>
       <div id="equipoList" class="sticker-list"></div>
     </div>
@@ -1198,32 +1223,93 @@
 
 <div class="toast" id="toast"></div>
 
+
+  <!-- ── MODAL AGREGAR PAÍS ── -->
+  <div class="modal" id="addTeamModal">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h3>Agregar Equipo</h3>
+        <button class="modal-close" onclick="App.closeAddTeam()">✕</button>
+      </div>
+      <div class="modal-body">
+        <div style="margin-bottom:16px">
+          <label for="newTeamName" style="display:block;font-size:13px;color:var(--text-2);margin-bottom:6px">Nombre del Equipo</label>
+          <input id="newTeamName" type="text" placeholder="Ej: Nueva Zelanda" class="input-field" style="width:100%"/>
+        </div>
+        <div style="margin-bottom:16px">
+          <label for="newTeamFlag" style="display:block;font-size:13px;color:var(--text-2);margin-bottom:6px">Bandera (emoji)</label>
+          <input id="newTeamFlag" type="text" placeholder="Ej: 🇳🇿" class="input-field" style="width:100%;font-size:24px;text-align:center"/>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn-secondary" onclick="App.closeAddTeam()">Cancelar</button>
+        <button class="btn-primary" onclick="App.saveNewTeam()">Agregar</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── MODAL AGREGAR JUGADOR ── -->
+  <div class="modal" id="addStickerModal">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h3>Agregar Jugador</h3>
+        <button class="modal-close" onclick="App.closeAddSticker()">✕</button>
+      </div>
+      <div class="modal-body">
+        <div style="margin-bottom:16px">
+          <label for="newStickerCode" style="display:block;font-size:13px;color:var(--text-2);margin-bottom:6px">Código</label>
+          <input id="newStickerCode" type="text" placeholder="Ej: ARG25" class="input-field" style="width:100%;text-transform:uppercase"/>
+        </div>
+        <div style="margin-bottom:16px">
+          <label for="newStickerName" style="display:block;font-size:13px;color:var(--text-2);margin-bottom:6px">Nombre</label>
+          <input id="newStickerName" type="text" placeholder="Ej: Messi" class="input-field" style="width:100%"/>
+        </div>
+        <div style="margin-bottom:16px">
+          <label for="newStickerTeam" style="display:block;font-size:13px;color:var(--text-2);margin-bottom:6px">Equipo</label>
+          <input id="newStickerTeam" type="text" readonly class="input-field" style="width:100%;opacity:0.6"/>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn-secondary" onclick="App.closeAddSticker()">Cancelar</button>
+        <button class="btn-primary" onclick="App.saveNewSticker()">Agregar</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── ESTILOS PARA MODALES ── -->
+  <style>
+    .modal { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.6); z-index: 200; align-items: center; justify-content: center; }
+    .modal.show { display: flex; }
+    .modal-content { background: var(--surface); border-radius: 12px; max-width: 400px; width: 90%; box-shadow: var(--shadow); overflow: hidden; }
+    .modal-header { padding: 16px; border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center; }
+    .modal-header h3 { margin: 0; font-size: 18px; }
+    .modal-close { background: none; border: none; color: var(--text); font-size: 20px; cursor: pointer; padding: 4px; }
+    .modal-body { padding: 20px; }
+    .modal-footer { padding: 16px; border-top: 1px solid var(--border); display: flex; gap: 12px; justify-content: flex-end; }
+    .btn-secondary { background: var(--surface2); border: 1px solid var(--border); color: var(--text); padding: 10px 16px; border-radius: 6px; cursor: pointer; font-size: 14px; }
+    .btn-secondary:hover { background: var(--border); }
+    .input-field { background: var(--surface2); border: 1px solid var(--border); color: var(--text); padding: 10px 12px; border-radius: 6px; font-family: inherit; font-size: 14px; }
+    .input-field:focus { outline: none; border-color: var(--accent); background: var(--surface2); }
+
+    /* Botón de agregar en vista de país */
+    .team-action-btn { display: flex; gap: 8px; margin-bottom: 16px; }
+    .team-action-btn button { flex: 1; padding: 10px 14px; border-radius: 6px; border: 1px solid var(--border); background: var(--surface2); color: var(--text); cursor: pointer; font-size: 13px; }
+    .team-action-btn button:hover { background: var(--accent); color: var(--bg); border-color: var(--accent); }
+  </style>
+
 <script>
-  (function () {
-    const saved = localStorage.getItem('estadio-theme') || 'dark';
-    document.body.setAttribute('data-theme', saved);
-    setTimeout(() => {
-      const btn = document.getElementById('themeBtn');
-      if (btn) btn.textContent = saved === 'dark' ? '☀' : '☾';
-    }, 0);
-  })();
-  function toggleTheme() {
-    const cur = document.body.getAttribute('data-theme');
-    const next = cur === 'dark' ? 'light' : 'dark';
-    document.body.setAttribute('data-theme', next);
-    localStorage.setItem('estadio-theme', next);
-    document.getElementById('themeBtn').textContent = next === 'dark' ? '☀' : '☾';
+window.App = App;
+
+App.init();
+
+document.addEventListener('click', e => {
+  if (!e.target.closest('.marcar-search-wrap')) {
+    document.getElementById('searchDrop')?.classList.remove('open');
   }
+});
 </script>
 
-<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js" onerror="this.dataset.failed=1"></script>
-<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js" onerror="this.dataset.failed=1"></script>
-<script src="config.js" onerror="this.dataset.failed=1"></script>
-<script src="stickers.js" onerror="this.dataset.failed=1"></script>
-<script src="album.js" onerror="this.dataset.failed=1"></script>
-<script src="app.js" onerror="this.dataset.failed=1"></script>
 
-<script src="mock-preview.js"></script>
 
 </body>
 </html>

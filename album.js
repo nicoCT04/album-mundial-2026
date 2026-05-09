@@ -6,7 +6,10 @@
 const Album = (() => {
 
   // ── Estado ──────────────────────────────────
-  let _data = {};        // { stickerId: 'tengo'|'falta'|'repetida' }
+  // Ahora _data soporta:
+  // { stickerId: 'tengo'|'falta' }   para estado único
+  // { stickerId: { estado: 'repetida', cantidad: 2 } }  para múltiples repetidas
+  let _data = {};        
   let _names = {};       // { stickerId: 'nombre corregido' }
   let _onChange = null;  // callback cuando cambia algo
 
@@ -22,7 +25,16 @@ const Album = (() => {
 
   // ── Getters ─────────────────────────────────
   function getEstado(id) {
-    return _data[id] || 'falta';
+    const val = _data[id];
+    if (!val) return 'falta';
+    if (typeof val === 'object' && val.estado) return val.estado;
+    return val;
+  }
+
+  function getCantidadRepetidas(id) {
+    const val = _data[id];
+    if (typeof val === 'object' && val.cantidad) return val.cantidad;
+    return 0;
   }
 
   function getNombre(s) {
@@ -30,24 +42,31 @@ const Album = (() => {
   }
 
   function getTengo() {
-    return STICKERS.filter(s => _data[s.id] === 'tengo');
+    return STICKERS.filter(s => getEstado(s.id) === 'tengo');
   }
 
   function getFaltantes() {
-    return STICKERS.filter(s => !_data[s.id] || _data[s.id] === 'falta');
+    return STICKERS.filter(s => {
+      const estado = getEstado(s.id);
+      return !estado || estado === 'falta';
+    });
   }
 
   function getRepetidas() {
-    return STICKERS.filter(s => _data[s.id] === 'repetida');
+    return STICKERS.filter(s => getEstado(s.id) === 'repetida');
   }
 
   function getStats() {
     const tengo    = getTengo().length;
     const falta    = getFaltantes().length;
     const repetida = getRepetidas().length;
+    const totalRep = Object.values(_data).reduce((sum, v) => {
+      if (typeof v === 'object' && v.cantidad) return sum + v.cantidad;
+      return sum;
+    }, 0);
     const total    = STICKERS.length;
     const pct      = total ? Math.round((tengo / total) * 100) : 0;
-    return { tengo, falta, repetida, total, pct };
+    return { tengo, falta, repetida, totalRep, total, pct };
   }
 
   function getByTeam(teamName) {
@@ -56,13 +75,12 @@ const Album = (() => {
 
   function getTeamStats(teamName) {
     const stickers = getByTeam(teamName);
-    const tengo    = stickers.filter(s => _data[s.id] === 'tengo').length;
+    const tengo    = stickers.filter(s => getEstado(s.id) === 'tengo').length;
     const total    = stickers.length;
     return { tengo, total, pct: Math.round((tengo / total) * 100) };
   }
 
   // ── Validación al marcar ─────────────────────
-  // Retorna: { valid: true } o { warn: true, msg: '...', suggestion: 'repetida' }
   function validarCambio(sticker, nuevoEstado) {
     const estadoActual = getEstado(sticker.id);
 
@@ -80,8 +98,27 @@ const Album = (() => {
   function aplicarCambio(id, nuevoEstado) {
     if (nuevoEstado === 'quitar') {
       _data[id] = 'falta';
+    } else if (nuevoEstado === 'repetida') {
+      // Si ya es repetida, sumar cantidad; si no, crear objeto
+      const actual = _data[id];
+      if (typeof actual === 'object' && actual.estado === 'repetida') {
+        _data[id] = { estado: 'repetida', cantidad: (actual.cantidad || 1) + 1 };
+      } else {
+        _data[id] = { estado: 'repetida', cantidad: 1 };
+      }
     } else {
       _data[id] = nuevoEstado;
+    }
+    return { ..._data };
+  }
+
+  // ── Reducir cantidad de repetidas ────────────
+  function restarRepetida(id) {
+    const actual = _data[id];
+    if (typeof actual === 'object' && actual.cantidad > 1) {
+      _data[id] = { estado: 'repetida', cantidad: actual.cantidad - 1 };
+    } else {
+      _data[id] = 'falta';
     }
     return { ..._data };
   }
@@ -111,15 +148,24 @@ const Album = (() => {
   // ── Render helpers ───────────────────────────
   function renderItem(s) {
     const estado    = getEstado(s.id);
+    const cantidad  = getCantidadRepetidas(s.id);
     const nombre    = getNombre(s);
     const foil      = s.type === 'foil' ? ' ✨' : '';
     const editado   = _names[s.id] ? '<span class="edited-badge">✏️</span>' : '';
     const badgeMap  = {
       tengo:    ['badge-tengo',    '✅ Tengo'],
       falta:    ['badge-falta',    '❌ Falta'],
-      repetida: ['badge-repetida', '🔁 Repetida'],
+      repetida: ['badge-repetida', `🔁 ${cantidad > 0 ? cantidad : 1}`],
     };
     const [badgeClass, badgeText] = badgeMap[estado] || badgeMap.falta;
+
+    // Si está en repetidas, agregar botones de control
+    const repetidaControls = estado === 'repetida' ? `
+      <div class="repetida-controls">
+        <button class="btn-add-rep" onclick="App.addRepetida('${s.id}')">➕</button>
+        <button class="btn-remove-rep" onclick="App.removeRepetida('${s.id}')">➖</button>
+      </div>
+    ` : '';
 
     return `
       <div class="sticker-item ${estado}">
@@ -129,6 +175,7 @@ const Album = (() => {
           <div class="sticker-team">${s.team}</div>
         </div>
         <div class="sticker-badge ${badgeClass}">${badgeText}</div>
+        ${repetidaControls}
       </div>`;
   }
 
@@ -151,9 +198,9 @@ const Album = (() => {
   // ── Public API ───────────────────────────────
   return {
     init, setData, setNames,
-    getEstado, getNombre,
+    getEstado, getCantidadRepetidas, getNombre,
     getTengo, getFaltantes, getRepetidas, getStats, getByTeam, getTeamStats,
-    validarCambio, aplicarCambio, aplicarNombre,
+    validarCambio, aplicarCambio, restarRepetida, aplicarNombre,
     filtrar, renderItem, renderTeamCard,
   };
 

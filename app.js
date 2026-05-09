@@ -19,6 +19,17 @@ const App = (() => {
 
   // ── Init ─────────────────────────────────────
   async function init() {
+    // Cargar TEAMS y STICKERS personalizados de localStorage si existen
+    try {
+      const customTeams = localStorage.getItem('TEAMS_CUSTOM');
+      if (customTeams) TEAMS = JSON.parse(customTeams);
+    } catch(e) { console.error('Error cargando TEAMS:', e); }
+    
+    try {
+      const customStickers = localStorage.getItem('STICKERS_CUSTOM');
+      if (customStickers) STICKERS = JSON.parse(customStickers);
+    } catch(e) { console.error('Error cargando STICKERS:', e); }
+
     firebase.initializeApp(CONFIG.firebase);
     db       = firebase.firestore();
     albumRef = db.collection('album').doc('estado');
@@ -319,15 +330,98 @@ const App = (() => {
     }
   }
 
-  // ── Helpers ──────────────────────────────────
-  function _clearSelected() {
-    selectedSticker = null;
-    selectedAction  = null;
-    const ms = document.getElementById('marcarSearch');
-    if (ms) ms.value = '';
-    document.getElementById('selectedCard')?.classList.remove('show');
-    document.getElementById('saveBtn')?.classList.remove('show');
-    document.querySelectorAll('.action-btn').forEach(b => b.classList.remove('selected'));
+  // ── Agregar nuevo país/equipo ───────────────
+  function openAddTeam() {
+    document.getElementById('addTeamModal')?.classList.add('show');
+  }
+
+  function closeAddTeam() {
+    document.getElementById('addTeamModal')?.classList.remove('show');
+    document.getElementById('newTeamName').value = '';
+    document.getElementById('newTeamFlag').value = '';
+  }
+
+  async function saveNewTeam() {
+    const teamName = document.getElementById('newTeamName')?.value.trim();
+    const teamFlag = document.getElementById('newTeamFlag')?.value.trim();
+    if (!teamName || !teamFlag) {
+      showToast('Completa todos los campos', 'error');
+      return;
+    }
+    TEAMS.push({ name: teamName, flag: teamFlag });
+    localStorage.setItem('TEAMS_CUSTOM', JSON.stringify(TEAMS));
+    showToast(`✅ Equipo "${teamName}" agregado`, 'success');
+    closeAddTeam();
+    _renderPaises();
+  }
+
+  // ── Agregar nuevo jugador ────────────────────
+  function openAddSticker() {
+    if (!currentTeam) {
+      showToast('Selecciona un equipo primero', 'error');
+      return;
+    }
+    document.getElementById('addStickerModal')?.classList.add('show');
+    document.getElementById('newStickerTeam').value = currentTeam;
+  }
+
+  function closeAddSticker() {
+    document.getElementById('addStickerModal')?.classList.remove('show');
+    document.getElementById('newStickerCode').value = '';
+    document.getElementById('newStickerName').value = '';
+    document.getElementById('newStickerTeam').value = '';
+  }
+
+  async function saveNewSticker() {
+    const code = document.getElementById('newStickerCode')?.value.trim().toUpperCase();
+    const name = document.getElementById('newStickerName')?.value.trim();
+    const team = document.getElementById('newStickerTeam')?.value.trim();
+    
+    if (!code || !name || !team) {
+      showToast('Completa todos los campos', 'error');
+      return;
+    }
+    
+    if (STICKERS.find(s => s.id === code)) {
+      showToast('Este código ya existe', 'error');
+      return;
+    }
+
+    const newSticker = { id: code, name: name, team: team, type: 'regular' };
+    STICKERS.push(newSticker);
+    localStorage.setItem('STICKERS_CUSTOM', JSON.stringify(STICKERS));
+    
+    // Agregar al firebase también
+    const nuevoData = Album.aplicarCambio(code, 'falta');
+    try {
+      await albumRef.set(nuevoData);
+      showToast(`✅ Estampa "${code}" agregada`, 'success');
+      closeAddSticker();
+      if (currentTeam) _renderTeamView();
+      _updateUI();
+    } catch(e) {
+      showToast('Error al guardar', 'error');
+    }
+  }
+
+  // ── Agregar cantidad de repetidas ────────────
+  function addRepetida(id) {
+    selectedSticker = STICKERS.find(s => s.id === id);
+    selectedAction = 'repetida';
+    _commitSave('repetida');
+  }
+
+  function removeRepetida(id) {
+    selectedSticker = STICKERS.find(s => s.id === id);
+    const nuevoData = Album.restarRepetida(id);
+    try {
+      albumRef.set(nuevoData).then(() => {
+        showToast('🔁 Repetida removida', 'success');
+        _updateUI();
+      });
+    } catch(e) {
+      showToast('Error al guardar', 'error');
+    }
   }
 
   function showToast(msg, type = 'success') {
@@ -344,6 +438,9 @@ const App = (() => {
     setAlbumFilter, checkPin, lockMarcar,
     searchMarcar, selectSticker, selectAction,
     saveSticker, saveName, showToast,
+    openAddTeam, closeAddTeam, saveNewTeam,
+    openAddSticker, closeAddSticker, saveNewSticker,
+    addRepetida, removeRepetida,
     filterAlbum:    () => _renderAlbum(),
     filterFalta:    () => _renderFaltantes(),
     filterRepetida: () => _renderRepetidas(),

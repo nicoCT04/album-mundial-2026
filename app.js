@@ -431,7 +431,19 @@ const App = (() => {
     }
   }
 
-  function showToast(msg, type = 'success') {
+  // ── Helpers ──────────────────────────────────
+  function _clearSelected() {
+    selectedSticker = null;
+    selectedAction  = null;
+    const ms = document.getElementById('marcarSearch');
+    if (ms) ms.value = '';
+    document.getElementById('selectedCard')?.classList.remove('show');
+    document.getElementById('saveBtn')?.classList.remove('show');
+    document.querySelectorAll('.action-btn').forEach(b => b.classList.remove('selected'));
+    document.getElementById('searchDrop')?.classList.remove('open');
+  }
+
+    function showToast(msg, type = 'success') {
     const t = document.getElementById('toast');
     if (!t) return;
     t.textContent = msg;

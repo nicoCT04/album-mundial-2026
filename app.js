@@ -392,14 +392,17 @@ const App = (() => {
     localStorage.setItem('STICKERS_CUSTOM', JSON.stringify(STICKERS));
     
     // Agregar al firebase también
-    const nuevoData = Album.aplicarCambio(code, 'falta');
     try {
-      await albumRef.set(nuevoData);
+      const currentSnap = await albumRef.get();
+      const currentData = currentSnap.exists ? currentSnap.data() : {};
+      currentData[code] = 'falta';
+      await albumRef.set(currentData);
       showToast(`✅ Estampa "${code}" agregada`, 'success');
       closeAddSticker();
       if (currentTeam) _renderTeamView();
       _updateUI();
     } catch(e) {
+      console.error('Error al guardar estampa:', e);
       showToast('Error al guardar', 'error');
     }
   }

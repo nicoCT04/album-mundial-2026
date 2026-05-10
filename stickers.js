@@ -16,6 +16,18 @@ const STICKERS = [
     {id:"FWC6",name:"Canada - Host Countries & Cities",team:"General",type:"foil"},
     {id:"FWC7",name:"Mexico - Host Countries & Cities",team:"General",type:"foil"},
     {id:"FWC8",name:"USA - Host Countries & Cities",team:"General",type:"foil"},
+    {id:"FWC9",name:"ITALY",team:"General",type:"foil"},
+    {id:"FWC10",name:"URUGUAY",team:"General",type:"foil"},
+    {id:"FWC11",name:"GERMANY",team:"General",type:"foil"},
+    {id:"FWC12",name:"BRAZIL",team:"General",type:"foil"},
+    {id:"FWC13",name:"GERMANY",team:"General",type:"foil"},
+    {id:"FWC14",name:"ARGENTINA",team:"General",type:"foil"},
+    {id:"FWC15",name:"BRAZIL",team:"General",type:"foil"},
+    {id:"FWC16",name:"BRAZIL",team:"General",type:"foil"},
+    {id:"FWC17",name:"ITALY",team:"General",type:"foil"},
+    {id:"FWC18",name:"GERMANY",team:"General",type:"foil"},
+    {id:"FWC19",name:"ARGENTINA",team:"General",type:"foil"},
+
     // Mexico
     {id:"MEX1",name:"Team Logo",team:"México",type:"foil"},
     {id:"MEX2",name:"Luis Malagón",team:"México"},
